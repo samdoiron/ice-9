@@ -1,0 +1,4 @@
+[package]
+name = "ice9"
+version = "0.1.0"
+authors = ["\"Samuel <samuel.doiron@shopify.com>"]
