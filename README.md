@@ -1,7 +1,7 @@
 # The ICE-9 virtual machine specification
 
 
-## Instructions set
+## Instruction set
 
 ICE-9 is a simple stack-based virtual machine, containing the following instructions.
 
