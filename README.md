@@ -6,10 +6,15 @@
 ICE-9 is a simple stack-based virtual machine, containing the following instructions.
 
 `c/n` -- push constant at index n to the stack
+
 `e` -- pop and echo the top item on the stack
+
 `a` -- pop the top two elements on the stack, and push their sum
+
 `r` -- return, or exit if at bottom of the call stack (REQUIRED AT END OF PROGRAM)
+
 `q` -- push 1 if the top two elements are equal, 0 otherwise
+
 `j/n` -- set PC to n if top of stack (popped) equals 1
 
 (temporary)
