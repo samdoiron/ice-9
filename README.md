@@ -29,4 +29,4 @@ in the Liquid temlating language.
 *Freon* is an implementation of the ICE-9 virtual machine written in Rust for easier
 debuging.
 
-Any difference in behaviour between Frigid and Freon is an implementation error.
+Any difference in behaviour between Hydro and Freon is an implementation error.
