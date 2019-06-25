@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+
+# ICE-9 assembler, makingn it slightly annoying
+# to code ~directly in ICE-9 assembly.
+
+bytecode = []
+symbol_lines = {}
+source_lines = STDIN.each_line.collect(&:strip).reject(&:empty?)
+
+non_symbol_lines = []
+
+line_num = 0
+source_lines.each do |line|
+  if /(\w+):/ =~ line
+    symbol_lines[$1] = line_num
+  else
+    non_symbol_lines << line
+    line_num += 1
+  end
+end
+
+constants = []
+
+non_symbol_lines.each do |line|
+  parts = line.split(/\s+/)
+  case parts.first
+  when 'constant'
+    instr_value = parts.last.to_i
+    constants << instr_value
+    constants.uniq!
+    index = constants.index(instr_value)
+    bytecode << "c/#{index}"
+  when 'jump_if'
+    bytecode << "j/#{symbol_lines[parts.last]}"
+  when 'equal?'
+    bytecode << "q"
+  when 'echo'
+    bytecode << "e"
+  when 'dup'
+    bytecode << "d"
+  when 'return'
+    bytecode << "r"
+  when 'add'
+    bytecode << 'a'
+  else
+    raise "Invalid operation #{line}"
+  end
+end
+
+puts constants.join(" ")
+puts bytecode.join(" ")

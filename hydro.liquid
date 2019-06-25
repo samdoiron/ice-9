@@ -1,93 +1,132 @@
+
+
+
+
 <code>
-{%- assign constants = "1 2 3" | split: " " -%}
-{%- assign bytecode = "c/0 c/1 q r" -%}
+{%- assign constants = "0 1 100" | split: " "  -%}
+{%- assign bytecode = "c/0 c/1 a d e d c/2 q j/11 c/1 j/1 r" -%}
 {%- assign ops = bytecode | split: " " -%}
 
-{%- comment -%}
 
-The stack separate elements based on space, since this makes it possible to POP
-using truncatewords.
 
-However, truncatewords when called with 0 returns a single word, so we need to
-store at least 1 element at all times, and ignore it. This is the "__BASE__"
-element. Unfortunately, this means all indexes are 1 based for the stack :<
-{%- endcomment -%}
 {%- assign stack = "__BASE__" -%}
 {%- assign stack_top = 0 -%}
 {%- assign pc = 0 -%}
+{%- assign cycle_count = 0 -%}
   
 constants: {{ constants | join: ", " }}<br />
 
 bytecode: {{ bytecode }}
 <br />--- Output ----------------------------------------------------------<br />
 {%- for _tick in (1..1000000) -%}
+    {%- assign cycle_count = cycle_count | plus: 1 -%}
+
   	{%- assign op_str = ops[pc] -%}
-	{%- assign op = op_str | split: "/" -%}
-	{%- assign op_type = op[0] -%}
+    {%- assign op = op_str | split: "/" -%}
+    {%- assign op_type = op[0] -%}
   
-  	{%- assign next_pc = pc | plus: 1 %}  
+    {%- assign next_pc = pc | plus: 1 %}
   
-  	{%- case op_type %}
+    {%- case op_type -%}
+
+    
   	{%- when "c" -%}
-      	{%- assign constant_index = op[1] | plus: 0 -%}
-        {%- assign constant_value = constants[constant_index] -%}
-        {%- assign stack_top = stack_top | plus: 1 -%}
-        {%- assign stack = stack | append: " " | append: constant_value -%}
-	{%- when "a" -%}
-  		{%- assign stack_array = stack | split: " " -%}
-        {%- assign first = stack_array | last %}
-        {%- assign stack = stack | truncatewords: stack_top | remove: "..." -%}
-        {%- assign stack_top = stack_top | minus: 1 -%}
+      {%- assign constant_index = op[1] | plus: 0 -%}
+      {%- assign constant_value = constants[constant_index] -%}
+      
+  {%- assign stack_top = stack_top | plus: 1 -%} 
+  {%- assign stack = stack | append: " " | append: constant_value -%}
 
-    	{%- assign stack_array = stack | split: " " -%}
-        {%- assign second = stack_array | last %}
-        {%- assign stack = stack | truncatewords: stack_top | remove: "..." -%}
-        {%- assign stack_top = stack_top | minus: 1 -%}
+    
+    {%- when "a" -%}
+      
+  {%- assign stack_array = stack | split: " " -%} 
+  {%- assign first = stack_array | last %} 
+  {%- assign stack = stack | truncatewords: stack_top | remove: "..." -%} 
+  {%- assign stack_top = stack_top | minus: 1 -%}
+      
+  {%- assign stack_array = stack | split: " " -%} 
+  {%- assign second = stack_array | last %} 
+  {%- assign stack = stack | truncatewords: stack_top | remove: "..." -%} 
+  {%- assign stack_top = stack_top | minus: 1 -%}
+      {%- assign result = first | plus: second %}
+      
+  {%- assign stack_top = stack_top | plus: 1 -%} 
+  {%- assign stack = stack | append: " " | append: result -%}
 
-        {%- assign result = first | plus: second -%}
-        {%- assign stack = stack | append: " " | append: result -%}
-        {%- assign stack_top = stack_top | plus: 1 -%}
-	{%- when "e" -%}
-  	    {% assign stack_array = stack | split: " " %}
-        {% assign popped = stack_array | last %}
-        {% assign stack = stack | truncatewords: stack_top | remove: "..." %}
-        {% assign stack_top = stack_top | minus: 1 %}
-		{{ popped }}
-  	{%- when "q" -%}
-  		{%- assign stack_array = stack | split: " " -%}
-        {%- assign first = stack_array | last %}
-        {%- assign stack = stack | truncatewords: stack_top | remove: "..." -%}
-        {%- assign stack_top = stack_top | minus: 1 -%}
+    
+    {%- when "e" -%}
+      
+  {%- assign stack_array = stack | split: " " -%} 
+  {%- assign popped = stack_array | last %} 
+  {%- assign stack = stack | truncatewords: stack_top | remove: "..." -%} 
+  {%- assign stack_top = stack_top | minus: 1 -%}
+      {{ popped }}
 
-  		{%- assign stack_array = stack | split: " " -%}
-        {%- assign second = stack_array | last %}
-        {%- assign stack = stack | truncatewords: stack_top | remove: "..." -%}
-        {%- assign stack_top = stack_top | minus: 1 -%}
+    
+    {%- when "q" -%}
+      
+  {%- assign stack_array = stack | split: " " -%} 
+  {%- assign first = stack_array | last %} 
+  {%- assign stack = stack | truncatewords: stack_top | remove: "..." -%} 
+  {%- assign stack_top = stack_top | minus: 1 -%}
+      
+  {%- assign stack_array = stack | split: " " -%} 
+  {%- assign second = stack_array | last %} 
+  {%- assign stack = stack | truncatewords: stack_top | remove: "..." -%} 
+  {%- assign stack_top = stack_top | minus: 1 -%}
   
-  		{%- assign result = 0 %}
-  		{%- if first == second %}
-  			{%- assign result = 1 -%}
-  		{%- endif -%}
-  			{% assign stack_array = stack | split: " " %}
-        	{% assign popped = stack_array | last %}
-        	{% assign stack = stack | truncatewords: stack_top | remove: "..." %}
-        	{% assign stack_top = stack_top | minus: 1 %}
+      {%- assign result = 0 -%}
+      {%- if first == second -%}
+        {%- assign result = 1 %}
+      {%- endif -%}
 
-        {%- assign stack = stack | append: " " | append: result -%}
-        {%- assign stack_top = stack_top | plus: 1 -%}
+      
+  {%- assign stack_top = stack_top | plus: 1 -%} 
+  {%- assign stack = stack | append: " " | append: result -%}
+
+    
   	{%- when "j" -%}
-  		
+      {%- assign target = op[1] -%}
+      {%- assign target = target | plus: 0 -%}
+
+      
+  {%- assign stack_array = stack | split: " " -%} 
+  {%- assign condition = stack_array | last %} 
+  {%- assign stack = stack | truncatewords: stack_top | remove: "..." -%} 
+  {%- assign stack_top = stack_top | minus: 1 -%}
+      {%- assign condition = condition | plus: 0 -%}
+
+      {%- if condition == 1 -%}
+        {%- assign next_pc = target -%}
+      {%- endif -%}
+
+    
+    {%- when "d" -%}
+      
+  {%- assign stack_array = stack | split: " " -%} 
+  {%- assign popped = stack_array | last %} 
+  {%- assign stack = stack | truncatewords: stack_top | remove: "..." -%} 
+  {%- assign stack_top = stack_top | minus: 1 -%}
+      
+  {%- assign stack_top = stack_top | plus: 1 -%} 
+  {%- assign stack = stack | append: " " | append: popped -%}
+      
+  {%- assign stack_top = stack_top | plus: 1 -%} 
+  {%- assign stack = stack | append: " " | append: popped -%}
+    
   	{%- when "r" -%}
-  		{%- break -%}
-	{%- endcase -%}
+      {%- break -%}
+    {%- endcase -%}
   
   	{%- assign pc = next_pc -%}
 {%- endfor -%}
 <br />---------------------------------------------------------------------<br />
 </code>
 <code><pre>
+Finished in {{ cycle_count }} cycles
 End stack: {{ stack }}
 Stack top: {{ stack_top }}
 PC: {{ pc }}
 </pre></code>
-<code>
+    <code>

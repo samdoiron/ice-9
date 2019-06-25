@@ -12,6 +12,9 @@ ICE-9 is a simple stack-based virtual machine, containing the following instruct
 `q` -- push 1 if the top two elements are equal, 0 otherwise
 `j/n` -- set PC to n if top of stack (popped) equals 1
 
+(temporary)
+`dup` -- duplicate the top of the stack (I just want some quick turing completeness for now,
+         will eventually be replaced with local variables + stack frames)
 
 ## Implementations
 

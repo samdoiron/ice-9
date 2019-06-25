@@ -1,0 +1,15 @@
+constant 0
+
+LOOP:
+  constant 1
+  add
+  dup
+  echo
+  dup
+  constant 100
+  equal?
+  jump_if DONE
+  constant 1
+  jump_if LOOP
+DONE:
+  return
