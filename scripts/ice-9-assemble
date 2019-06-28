@@ -13,6 +13,7 @@ line_num = 0
 source_lines.each do |line|
   if /(\w+):/ =~ line
     symbol_lines[$1] = line_num
+  elsif /#/ =~ line
   else
     non_symbol_lines << line
     line_num += 1
@@ -36,12 +37,18 @@ non_symbol_lines.each do |line|
     bytecode << "q"
   when 'echo'
     bytecode << "e"
-  when 'dup'
-    bytecode << "d"
   when 'return'
     bytecode << "r"
   when 'add'
     bytecode << 'a'
+  when 'multiply'
+    bytecode << 'm'
+  when 'call'
+    bytecode << "x/#{symbol_lines[parts.last]}"
+  when 'set'
+    bytecode << "s/#{parts.last}"
+  when 'var'
+    bytecode << "v/#{parts.last}"
   else
     raise "Invalid operation #{line}"
   end

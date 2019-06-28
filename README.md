@@ -9,17 +9,37 @@ ICE-9 is a simple stack-based virtual machine, containing the following instruct
 
 `e` -- pop and echo the top item on the stack
 
-`a` -- pop the top two elements on the stack, and push their sum
+`+` -- pop the top two elements on the stack, and push their sum
 
 `r` -- return, or exit if at bottom of the call stack (REQUIRED AT END OF PROGRAM)
 
-`q` -- push 1 if the top two elements are equal, 0 otherwise
+`=` -- push 1 if the top two elements are equal, 0 otherwise
 
 `j/n` -- set PC to n if top of stack (popped) equals 1
 
-(temporary)
-`dup` -- duplicate the top of the stack (I just want some quick turing completeness for now,
-         will eventually be replaced with local variables + stack frames)
+`g/n` -- goto n
+
+`x/n` -- call subroutine at n, pushing a new stack frame
+
+`s/n` -- set variable n to the value at the top of the stack
+
+`v/n` -- push the value of variable n
+
+`*` -- multiple the top two elements, pushing their product
+
+`-` -- subtract the top two elements, pushing their difference
+
+`>` -- greater than (2nd greater than first)
+
+`<` -- less than (2nd less than first)
+
+`|` -- or
+
+`&` -- and
+
+`!` -- not
+
+`%` -- modulo
 
 ## Implementations
 

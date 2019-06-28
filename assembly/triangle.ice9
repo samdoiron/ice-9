@@ -1,15 +1,46 @@
-constant 0
+# low = 1
+constant 1
+set 0
 
+# hi = 1
+constant 1
+set 1
+
+# i = 1
+constant 1
+set 2
+
+# while i != 10
 LOOP:
-  constant 1
-  add
-  dup
-  echo
-  dup
-  constant 100
+  var 2
+  constant 1000
   equal?
   jump_if DONE
+
+  # temp = hi
+  var 1
+  set 3
+
+  # hi = hi + low
+  var 0
+  var 1
+  add
+  set 1
+
+  # low = temp
+  var 3
+  set 0
+
+  # i = i + 1
+  var 2
+  constant 1
+  add
+  set 2
+
   constant 1
   jump_if LOOP
+
 DONE:
+  var 0
+  echo
   return

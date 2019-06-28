@@ -1,0 +1,9 @@
+version = "2"
+
+[[tasks]]
+name = "hello"
+silent = true
+deps = ["foobar"]
+cmds = [
+  "echo 'Hello world' from task"
+]

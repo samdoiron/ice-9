@@ -2,3 +2,16 @@
 name = "ice9"
 version = "0.1.0"
 authors = ["\"Samuel <samuel.doiron@shopify.com>"]
+
+[dependencies]
+liquid = "*"
+pest = "2.1.0"
+pest_derive = "2.1.0"
+
+[[bin]]
+name = "liquid"
+path = "src/liquid.rs"
+
+[[bin]]
+name = "plasma"
+path = "src/plasma.rs"
