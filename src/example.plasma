@@ -1,3 +1,30 @@
-a = 10
-b = 2
-echo a % b;
+candidate = 2;
+
+while candidate < 500 {
+  prime? = 1;
+  divisor = 2;
+
+  bound = candidate / 2;
+  bound2 = candidate / bound;
+  bound = (bound + bound2) / 2;
+  bound2 = candidate / bound;
+  bound = (bound + bound2) / 2;
+  bound2 = candidate / bound;
+  bound = (bound + bound2) / 2;
+  bound2 = candidate / bound;
+  bound = (bound + bound2) / 2;
+
+  while divisor < bound {
+
+    if (candidate % divisor) == 0 {
+      prime? = 0;
+    }
+    divisor = divisor + 1;
+  }
+
+  if prime? {
+    echo candidate;
+  }
+
+  candidate = candidate + 1;
+}

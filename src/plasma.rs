@@ -22,7 +22,11 @@ enum Expression {
   Add(Box<Expression>, Box<Expression>),
   Or(Box<Expression>, Box<Expression>),
   And(Box<Expression>, Box<Expression>),
+  Not(Box<Expression>),
   Subtract(Box<Expression>, Box<Expression>),
+  Divide(Box<Expression>, Box<Expression>),
+  Multiply(Box<Expression>, Box<Expression>),
+  Modulo(Box<Expression>, Box<Expression>),
   IsGreaterThan(Box<Expression>, Box<Expression>),
   IsLessThan(Box<Expression>, Box<Expression>),
   IsEqual(Box<Expression>, Box<Expression>)
@@ -43,6 +47,9 @@ enum Op {
   Echo,
   Add,
   Subtract,
+  Multiply,
+  Divide,
+  Modulo,
   IsGreaterThan,
   IsLessThan,
   IsEqual,
@@ -92,6 +99,8 @@ fn parse_expression(pair: Pair) -> Expression {
     Rule::num_literal => parse_num_literal(inner),
     Rule::non_infix_expression => parse_expression(inner),
     Rule::ident => Expression::Ident(inner.as_str().into()),
+    Rule::not => parse_not(inner),
+    Rule::expression => parse_expression(inner),
     other => panic!("unknown expression rule: {:?}", other)
   }
 }
@@ -128,6 +137,12 @@ fn parse_num_literal(pair: Pair) -> Expression {
   Expression::Number(pair.as_str().parse().unwrap())
 }
 
+fn parse_not(pair: Pair) -> Expression {
+  let mut inner = pair.into_inner();
+  let expression = parse_expression(inner.next().unwrap());
+  Expression::Not(Box::new(expression))
+}
+
 fn parse_infix_expression(pair: Pair) -> Expression {
   let mut inner = pair.into_inner();
   let term_one = inner.next().unwrap();
@@ -142,6 +157,21 @@ fn parse_infix_expression(pair: Pair) -> Expression {
       ),
     "-" =>
       Expression::Subtract(
+        Box::new(parse_expression(term_one)),
+        Box::new(parse_expression(term_two)),
+      ),
+    "*" =>
+      Expression::Multiply(
+        Box::new(parse_expression(term_one)),
+        Box::new(parse_expression(term_two)),
+      ),
+    "/" =>
+      Expression::Divide(
+        Box::new(parse_expression(term_one)),
+        Box::new(parse_expression(term_two)),
+      ),
+    "%" =>
+      Expression::Modulo(
         Box::new(parse_expression(term_one)),
         Box::new(parse_expression(term_two)),
       ),
@@ -294,6 +324,21 @@ impl Program {
         self.compile_expression(two.borrow());
         self.ops.push(Op::Subtract);
       },
+      Expression::Multiply(one, two) => {
+        self.compile_expression(one.borrow());
+        self.compile_expression(two.borrow());
+        self.ops.push(Op::Multiply);
+      },
+      Expression::Divide(one, two) => {
+        self.compile_expression(one.borrow());
+        self.compile_expression(two.borrow());
+        self.ops.push(Op::Divide);
+      },
+      Expression::Modulo(one, two) => {
+        self.compile_expression(one.borrow());
+        self.compile_expression(two.borrow());
+        self.ops.push(Op::Modulo);
+      },
       Expression::IsEqual(one, two) => {
         self.compile_expression(one.borrow());
         self.compile_expression(two.borrow());
@@ -318,6 +363,10 @@ impl Program {
         self.compile_expression(one.borrow());
         self.compile_expression(two.borrow());
         self.ops.push(Op::Or);
+      },
+      Expression::Not(inner) => {
+        self.compile_expression(inner.borrow());
+        self.ops.push(Op::Not);
       },
       Expression::Ident(name) => {
         match self.variables.iter().position(|var| var == name) {
@@ -344,6 +393,9 @@ fn ops_to_bytecode(ops: Vec<Op>) -> String {
       Op::Constant(index) => write!(&mut bytecode, "c/{} ", index),
       Op::Add => write!(&mut bytecode, "+ "),
       Op::Subtract => write!(&mut bytecode, "- "),
+      Op::Multiply => write!(&mut bytecode, "* "),
+      Op::Divide => write!(&mut bytecode, "÷ "),
+      Op::Modulo => write!(&mut bytecode, "% "),
       Op::IsGreaterThan => write!(&mut bytecode, "> "),
       Op::IsLessThan => write!(&mut bytecode, "< "),
       Op::IsEqual => write!(&mut bytecode, "= "),
@@ -355,7 +407,7 @@ fn ops_to_bytecode(ops: Vec<Op>) -> String {
       Op::JumpIf(index) => write!(&mut bytecode, "j/{} ", index),
       Op::Goto(index) => write!(&mut bytecode, "g/{} ", index),
       Op::Return => write!(&mut bytecode, "r ")
-    }.expect("compose byetcode");
+    }.expect("compose bytecode");
   }
   bytecode
 }

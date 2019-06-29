@@ -134,7 +134,7 @@
 {%- assign var98 = "" -%}
 {%- assign var99 = "" -%}
   
-{%- for _tick in (1..1000000) -%}
+{%- for _tick in (1..12345678) -%}
 
     {%- assign cycle_count = cycle_count | plus: 1 -%}
 
@@ -158,12 +158,12 @@
     {%- when "+" -%}
       
   {%- assign data_stack_array = data_stack | split: " " -%} 
-  {%- assign  first = data_stack_array | last %} 
+  {%- assign  second = data_stack_array | last %} 
   {%- assign data_stack = data_stack | truncatewords: data_stack_top | remove: "..." -%} 
   {%- assign data_stack_top = data_stack_top | minus: 1 -%}
       
   {%- assign data_stack_array = data_stack | split: " " -%} 
-  {%- assign  second = data_stack_array | last %} 
+  {%- assign  first = data_stack_array | last %} 
   {%- assign data_stack = data_stack | truncatewords: data_stack_top | remove: "..." -%} 
   {%- assign data_stack_top = data_stack_top | minus: 1 -%}
       {%- assign result = first | plus: second %}
@@ -175,15 +175,32 @@
     {%- when "-" -%}
       
   {%- assign data_stack_array = data_stack | split: " " -%} 
+  {%- assign  second = data_stack_array | last %} 
+  {%- assign data_stack = data_stack | truncatewords: data_stack_top | remove: "..." -%} 
+  {%- assign data_stack_top = data_stack_top | minus: 1 -%}
+      
+  {%- assign data_stack_array = data_stack | split: " " -%} 
   {%- assign  first = data_stack_array | last %} 
   {%- assign data_stack = data_stack | truncatewords: data_stack_top | remove: "..." -%} 
   {%- assign data_stack_top = data_stack_top | minus: 1 -%}
+      {%- assign result = first | minus: second %}
+      
+  {%- assign data_stack_top = data_stack_top | plus: 1 -%} 
+  {%- assign data_stack = data_stack | append: " " | append:  result -%}
+
+    
+    {%- when "%" -%}
       
   {%- assign data_stack_array = data_stack | split: " " -%} 
   {%- assign  second = data_stack_array | last %} 
   {%- assign data_stack = data_stack | truncatewords: data_stack_top | remove: "..." -%} 
   {%- assign data_stack_top = data_stack_top | minus: 1 -%}
-      {%- assign result = first | minus: second %}
+      
+  {%- assign data_stack_array = data_stack | split: " " -%} 
+  {%- assign  first = data_stack_array | last %} 
+  {%- assign data_stack = data_stack | truncatewords: data_stack_top | remove: "..." -%} 
+  {%- assign data_stack_top = data_stack_top | minus: 1 -%}
+      {%- assign result = first | modulo: second %}
       
   {%- assign data_stack_top = data_stack_top | plus: 1 -%} 
   {%- assign data_stack = data_stack | append: " " | append:  result -%}
@@ -316,6 +333,23 @@
   {%- assign data_stack = data_stack | truncatewords: data_stack_top | remove: "..." -%} 
   {%- assign data_stack_top = data_stack_top | minus: 1 -%}
       {%- assign result = first | times: second %}
+      
+  {%- assign data_stack_top = data_stack_top | plus: 1 -%} 
+  {%- assign data_stack = data_stack | append: " " | append:  result -%}
+
+    
+    {%- when "÷" -%}
+      
+  {%- assign data_stack_array = data_stack | split: " " -%} 
+  {%- assign  second = data_stack_array | last %} 
+  {%- assign data_stack = data_stack | truncatewords: data_stack_top | remove: "..." -%} 
+  {%- assign data_stack_top = data_stack_top | minus: 1 -%}
+      
+  {%- assign data_stack_array = data_stack | split: " " -%} 
+  {%- assign  first = data_stack_array | last %} 
+  {%- assign data_stack = data_stack | truncatewords: data_stack_top | remove: "..." -%} 
+  {%- assign data_stack_top = data_stack_top | minus: 1 -%}
+      {%- assign result = first | divided_by: second %}
       
   {%- assign data_stack_top = data_stack_top | plus: 1 -%} 
   {%- assign data_stack = data_stack | append: " " | append:  result -%}

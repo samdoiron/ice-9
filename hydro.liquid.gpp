@@ -249,7 +249,7 @@ _( Local variables, yay!)
 {%- assign var98 = "" -%}
 {%- assign var99 = "" -%}
   
-{%- for _tick in (1..1000000) -%}
+{%- for _tick in (1..12345678) -%}
 
     {%- assign cycle_count = cycle_count | plus: 1 -%}
 
@@ -269,16 +269,23 @@ _( Local variables, yay!)
 
     _( add )
     {%- when "+" -%}
-      POP(data_stack, first)
       POP(data_stack, second)
+      POP(data_stack, first)
       {%- assign result = first | plus: second %}
       PUSH(data_stack, result)
 
     _( subtract )
     {%- when "-" -%}
-      POP(data_stack, first)
       POP(data_stack, second)
+      POP(data_stack, first)
       {%- assign result = first | minus: second %}
+      PUSH(data_stack, result)
+
+    _( modulo )
+    {%- when "%" -%}
+      POP(data_stack, second)
+      POP(data_stack, first)
+      {%- assign result = first | modulo: second %}
       PUSH(data_stack, result)
 
     _( greater than )
@@ -345,6 +352,13 @@ _( Local variables, yay!)
       POP(data_stack, first)
       POP(data_stack, second)
       {%- assign result = first | times: second %}
+      PUSH(data_stack, result)
+
+    _( divide )
+    {%- when "÷" -%}
+      POP(data_stack, second)
+      POP(data_stack, first)
+      {%- assign result = first | divided_by: second %}
       PUSH(data_stack, result)
 
     _( echo )

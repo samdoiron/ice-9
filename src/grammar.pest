@@ -3,7 +3,7 @@ digit = { '0'..'9' }
 
 WHITESPACE = _{ " " | "\t" | "\n" }
 
-ident = ${ alpha ~ (alpha | digit)* }
+ident = ${ alpha ~ (alpha | digit | "-" | "?" | "!")* }
 
 ident_list = _{ (ident ~ ",")* ~ ident  }
 
@@ -11,12 +11,14 @@ ident_list = _{ (ident ~ ",")* ~ ident  }
 num_literal = @{ digit+ }
 func_call = { ident ~ "(" ~ ((expression ~ ",")* ~ expression)? ~ ")" }
 
-infix_op = { "+" | "-" | ">" | "<" | "|" | "&" | "==" }
+infix_op = { "+" | "-" | "*" |  "/" | "%" | ">" | "<" | "|" | "&" | "==" }
 infix_expression = { (non_infix_expression | "(" ~ expression ~ ")" ) ~ infix_op ~ expression }
 assignment = { ident ~ "=" ~ expression }
 
-non_infix_expression = { ident | num_literal | func_call }
-expression = { infix_expression | non_infix_expression }
+not = { "!" ~ expression }
+
+non_infix_expression = { not | ident | num_literal | func_call }
+expression = {  infix_expression | "(" ~ expression ~ ")" | non_infix_expression }
 
 conditional = { "if" ~ expression ~ block }
 while_loop = { "while" ~ expression ~ block }
