@@ -1,6 +1,6 @@
 candidate = 2;
 
-while candidate < 500 {
+while candidate < 1000 {
   prime? = 1;
   divisor = 2;
 
