@@ -44,7 +44,7 @@ ICE-9 is a simple stack-based virtual machine, containing the following instruct
 ## Implementations
 
 *Hydro* is the primary implementation of the ICE-9 virtual machine, written
-in the Liquid temlating language.
+in the Liquid templating language.
 
 *Freon* is an implementation of the ICE-9 virtual machine written in Rust for easier
 debuging.
