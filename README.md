@@ -50,3 +50,34 @@ in the Liquid temlating language.
 debuging.
 
 Any difference in behaviour between Hydro and Freon is an implementation error.
+
+
+## Plasma
+
+Plasma is a langage that compiles to ICE-9 assembly, which can then be
+interpreted by liquid.
+
+Here is some sample code. Note that the syntax is highly unstable.
+This code has been tested and runs successfully when compiled / interpreted.
+
+```
+candidate = 2;
+
+while candidate < 1000 {
+  prime? = 1;
+  divisor = 2;
+
+  while divisor < bound {
+    if (candidate % divisor) == 0 {
+      prime? = 0;
+    }
+    divisor = divisor + 1;
+  }
+
+  if prime? {
+    echo candidate;
+  }
+
+  candidate = candidate + 1;
+}
+```
