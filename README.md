@@ -60,7 +60,7 @@ interpreted by liquid.
 Here is some sample code. Note that the syntax is highly unstable.
 This code has been tested and runs successfully when compiled / interpreted.
 
-```
+```ruby
 candidate = 2;
 
 while candidate < 1000 {
