@@ -67,7 +67,7 @@ while candidate < 1000 {
   prime? = 1;
   divisor = 2;
 
-  while divisor < bound {
+  while divisor < candidate {
     if (candidate % divisor) == 0 {
       prime? = 0;
     }
