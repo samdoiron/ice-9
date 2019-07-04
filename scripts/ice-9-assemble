@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# ICE-9 assembler, makingn it slightly annoying
+# ICE-9 assembler, makingn it slightly less annoying
 # to code ~directly in ICE-9 assembly.
 
 bytecode = []
