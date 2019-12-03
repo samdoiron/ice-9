@@ -1,3 +1,4 @@
+extern crate clap;
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
@@ -6,7 +7,9 @@ use std::io::{self, Read};
 
 use std::borrow::Borrow;
 use pest::Parser;
+use clap::{App, SubCommand};
 use std::fmt::Write;
+use std::collections::HashMap;
 
 #[derive(Parser)]
 #[grammar = "grammar.pest"]
@@ -14,6 +17,8 @@ struct PlasmaParser;
 
 type Pairs<'a> = pest::iterators::Pairs<'a, Rule>;
 type Pair<'a> = pest::iterators::Pair<'a, Rule>;
+
+type SymbolTable = HashMap<String, isize>;
 
 #[derive(Debug)]
 enum Expression {
@@ -29,6 +34,7 @@ enum Expression {
   Modulo(Box<Expression>, Box<Expression>),
   IsGreaterThan(Box<Expression>, Box<Expression>),
   IsLessThan(Box<Expression>, Box<Expression>),
+  FunctionCall(String),
   IsEqual(Box<Expression>, Box<Expression>)
 }
 
@@ -38,7 +44,8 @@ enum Statement {
   Expression(Expression),
   If(Expression, Vec<Statement>),
   While(Expression, Vec<Statement>),
-  Echo(Expression)
+  Echo(Expression),
+  FunctionDefinition(String, Vec<Statement>)
 }
 
 #[derive(Debug)]
@@ -60,6 +67,10 @@ enum Op {
   LoadVariable(usize),
   JumpIf(usize),
   Goto(usize),
+
+  // Filled in with the correct location at compile time based on the value
+  // found in the name table
+  CallFunction(String),
   Return
 }
 
@@ -83,6 +94,9 @@ fn parse<'a>(pairs: Pairs<'a>) -> Vec<Statement> {
       Rule::echo => {
         statements.push(parse_echo(pair));
       }
+      Rule::func_definition => {
+        statements.push(parse_function_definition(pair))
+      },
       Rule::EOI => (),
       other => panic!("unknown pair type: {:?}", other)
     }
@@ -101,6 +115,7 @@ fn parse_expression(pair: Pair) -> Expression {
     Rule::ident => Expression::Ident(inner.as_str().into()),
     Rule::not => parse_not(inner),
     Rule::expression => parse_expression(inner),
+    Rule::func_call => parse_func_call(inner),
     other => panic!("unknown expression rule: {:?}", other)
   }
 }
@@ -132,6 +147,12 @@ fn parse_echo(pair: Pair) -> Statement {
   Statement::Echo(expression)
 }
 
+fn parse_function_definition(pair: Pair) -> Statement {
+  let mut inner = pair.into_inner();
+  let name = inner.next().unwrap();
+  let body = parse(inner.next().unwrap().into_inner());
+  Statement::FunctionDefinition(name.as_str().into(), body)
+}
 
 fn parse_num_literal(pair: Pair) -> Expression {
   Expression::Number(pair.as_str().parse().unwrap())
@@ -204,29 +225,26 @@ fn parse_infix_expression(pair: Pair) -> Expression {
   }
 }
 
-struct Program {
-  constants: Vec<i64>,
-  ops: Vec<Op>,
-  variables: Vec<String>
+fn parse_func_call(pair: Pair) -> Expression {
+  Expression::FunctionCall(pair.into_inner().next().unwrap().as_str().into())
 }
 
-impl Program {
-  fn compile(statements: Vec<Statement>) -> Program {
-    let mut program = Program {
-      constants: Vec::new(),
-      ops: Vec::new(),
-      variables: Vec::new()
-    };
-    program.compile_program(statements);
-    program
+struct CodeChunk {
+  ops: Vec<Op>
+}
+
+impl CodeChunk {
+  fn new(ops: Vec<Op>) {
+    CodeChunk { ops: ops }
   }
 
-  fn compile_program(&mut self, statements: Vec<Statement>) {
-    self.compile_statements(&statements);
-    self.ops.push(Op::Return);
+  fn compile(self, statments: &Vec<Statement>) -> Vec<Op> {
+      self.compile_statements(statements);
+      self.ops.push(Op::Return);
+      self.ops
   }
 
-  fn compile_statements(&mut self, nodes: &Vec<Statement>) {
+  fn compile_statements(&mut self, statements: &Vec<Statement>) {
     for node in nodes {
       self.compile_statement(&node);
     }
@@ -248,6 +266,9 @@ impl Program {
         };
         self.compile_expression(value);
         self.ops.push(Op::SetVariable(index));
+      }
+      Statement::FunctionDefinition(name, body) {
+        self.compile_function_definition(name, body)
       }
     }
   }
@@ -290,7 +311,7 @@ impl Program {
     // jump_if <end>
     // <body>
     // goto <start>
-    // <if_body>
+    // <while_body>
     // <end>
 
     let start_index = self.ops.len();
@@ -310,6 +331,12 @@ impl Program {
   fn compile_echo(&mut self, expression: &Expression) {
     self.compile_expression(expression);
     self.ops.push(Op::Echo);
+  }
+
+  fn compile_function_definition(&mut self, name: String, body: Vec<Statement>) {
+    let body_ops = self.compile(body);
+    function_ops.concat(body_ops);
+    self.symbol_table.put();
   }
 
   fn compile_expression(&mut self, expression: &Expression) {
@@ -381,38 +408,109 @@ impl Program {
         let index = self.constants.len() - 1;
         self.ops.push(Op::Constant(index));
       },
+      Expression::FunctionCall(name) => {
+        self.ops.push(Op::CallFunction(name.into()));
+      }
     }
   }
 }
 
-fn ops_to_bytecode(ops: Vec<Op>) -> String {
-  let mut bytecode = String::new();
-  for op in ops {
-    match op {
-      Op::Echo => write!(&mut bytecode, "e "),
-      Op::Constant(index) => write!(&mut bytecode, "c/{} ", index),
-      Op::Add => write!(&mut bytecode, "+ "),
-      Op::Subtract => write!(&mut bytecode, "- "),
-      Op::Multiply => write!(&mut bytecode, "* "),
-      Op::Divide => write!(&mut bytecode, "÷ "),
-      Op::Modulo => write!(&mut bytecode, "% "),
-      Op::IsGreaterThan => write!(&mut bytecode, "> "),
-      Op::IsLessThan => write!(&mut bytecode, "< "),
-      Op::IsEqual => write!(&mut bytecode, "= "),
-      Op::And => write!(&mut bytecode, "& "),
-      Op::Or => write!(&mut bytecode, "| "),
-      Op::Not => write!(&mut bytecode, "! "),
-      Op::SetVariable(index) => write!(&mut bytecode, "s/{} ", index),
-      Op::LoadVariable(index) => write!(&mut bytecode, "v/{} ", index),
-      Op::JumpIf(index) => write!(&mut bytecode, "j/{} ", index),
-      Op::Goto(index) => write!(&mut bytecode, "g/{} ", index),
-      Op::Return => write!(&mut bytecode, "r ")
-    }.expect("compose bytecode");
-  }
-  bytecode
+struct Program {
+  constants: Vec<i64>,
+  ops: Vec<Op>,
+  function_ops: Vec<Op>,
+  variables: Vec<String>,
+  symbol_table: SymbolTable
 }
 
-fn main() {
+impl Program {
+  fn compile(statements: Vec<Statement>) -> Program {
+    let mut program = Program {
+      constants: Vec::new(),
+      ops: Vec::new(),
+      function_ops: Vec::new(),
+      variables: Vec::new(),
+      symbol_table: HashMap::new()
+    };
+    program.compile_program(statements);
+    program
+  }
+
+  fn bytecode(&self) -> String {
+    let mut bytecode = String::new();
+    for op in &self.ops {
+      match op {
+        Op::Echo => write!(&mut bytecode, "e "),
+        Op::Constant(index) => write!(&mut bytecode, "c/{} ", index),
+        Op::Add => write!(&mut bytecode, "+ "),
+        Op::Subtract => write!(&mut bytecode, "- "),
+        Op::Multiply => write!(&mut bytecode, "* "),
+        Op::Divide => write!(&mut bytecode, "÷ "),
+        Op::Modulo => write!(&mut bytecode, "% "),
+        Op::IsGreaterThan => write!(&mut bytecode, "> "),
+        Op::IsLessThan => write!(&mut bytecode, "< "),
+        Op::IsEqual => write!(&mut bytecode, "= "),
+        Op::And => write!(&mut bytecode, "& "),
+        Op::Or => write!(&mut bytecode, "| "),
+        Op::Not => write!(&mut bytecode, "! "),
+        Op::SetVariable(index) => write!(&mut bytecode, "s/{} ", index),
+        Op::LoadVariable(index) => write!(&mut bytecode, "v/{} ", index),
+        Op::JumpIf(index) => write!(&mut bytecode, "j/{} ", index),
+        Op::Goto(index) => write!(&mut bytecode, "g/{} ", index),
+        Op::Return => write!(&mut bytecode, "r "),
+        Op::CallFunction(name) => {
+          match self.symbol_table.get(name) {
+            Some(index) => {
+              write!(&mut bytecode, "j/{}", index)
+            },
+            None => {
+              panic!("No definition found for function {}", name)
+            }
+          }
+        }
+      }.expect("compose bytecode");
+    }
+    bytecode
+  }
+
+  fn compile_program(&mut self, statements: Vec<Statement>) {
+    self.compile_statements(&statements);
+    self.ops.push(Op::Return);
+  }
+
+}
+
+fn show_ast() {
+  let mut code = String::new();
+  io::stdin().read_to_string(&mut code).expect("read input");
+
+  let pairs = PlasmaParser::parse(Rule::program, &code)
+    .unwrap_or_else(|e| panic!("{}", e));
+
+  let ast = parse(pairs);
+  println!("{:#?}", ast);
+}
+
+fn show_components() {
+  let mut code = String::new();
+  io::stdin().read_to_string(&mut code).expect("read input");
+
+  let pairs = PlasmaParser::parse(Rule::program, &code)
+    .unwrap_or_else(|e| panic!("{}", e));
+
+  let ast = parse(pairs);
+  let program = Program::compile(ast);
+
+  let mut constants = String::new();
+  for constant in &program.constants {
+    write!(&mut constants, "{} ", constant).expect("write constants");
+  }
+
+  println!("Constants: {}", constants);
+  println!("Bytecode: {}", program.bytecode());
+}
+
+fn show_compiled_liquid() {
   let mut code = String::new();
   io::stdin().read_to_string(&mut code).expect("read input");
 
@@ -423,15 +521,43 @@ fn main() {
 
   let ast = parse(pairs);
   let program = Program::compile(ast);
-  
+
   let mut constants = String::new();
-  for constant in program.constants {
+  for constant in &program.constants {
     write!(&mut constants, "{} ", constant).expect("write constants");
   }
 
   let hydro = hydro_template
     .replace("__CONSTANTS__", &constants)
-    .replace("__BYTECODE__", &ops_to_bytecode(program.ops));
+    .replace("__BYTECODE__", &program.bytecode());
 
-  println!("{}", hydro)
+  println!("{}", hydro);
+}
+
+fn main() {
+  let app = App::new("plasma")
+    .version("0.1")
+    .about("Compiles Plasma code")
+    .author("Sam Doiron")
+    .subcommand(
+      SubCommand::with_name("ast")
+        .about("Show the parsed AST of the code"))
+    .subcommand(
+      SubCommand::with_name("components")
+        .about("Show the separate components of the compiled output."));
+  let global_matches = app.get_matches();
+
+  if global_matches.subcommand_matches("ast").is_some() {
+    show_ast();
+    return;
+  } else if global_matches.subcommand_matches("components").is_some() {
+    show_components();
+    return;
+  } else if global_matches.subcommand_matches("compile").is_some() {
+    show_compiled_liquid();
+    return;
+  } else {
+    println!("{}", "Malformed arguments. See --help for usage.");
+    ::std::process::exit(1);
+  }
 }

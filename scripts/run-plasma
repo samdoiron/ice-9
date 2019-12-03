@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cargo run --bin plasma < $1 | cargo run --bin liquid
+

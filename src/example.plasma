@@ -15,7 +15,6 @@ while candidate < 1000 {
   bound = (bound + bound2) / 2;
 
   while divisor < bound {
-
     if (candidate % divisor) == 0 {
       prime? = 0;
     }
