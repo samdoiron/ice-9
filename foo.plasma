@@ -1,6 +1,6 @@
-fn foo {
-  echo 123;
-}
 
-foo();
+
+while 1 {
+  echo 1;
+}
 

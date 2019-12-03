@@ -73,42 +73,43 @@ impl StatementChunk {
     // Compiled output looks something like this
     // 
     // <condition>
-    // jump_if <if_body_index>
-    // <else_body>
-    // goto <end_index>
-    // <if_body>
-    // <end>
+    // <if_body_jump_index> │ jump_if <if_body_index> >─╮
+    // ...                  │ <else_body>               │
+    // <end_jump_index>     │ goto <end_index> >──────────╮
+    // <if_body_index>      │ <if_body>            <────╯ │
+    // ...                  │ <if_body>                   │
+    // <end_index>          │ ... whatever is next <──────╯
 
     self.compile_expression(condition);
+
+    let if_body_jump_index = self.ops.len() as isize;
     self.ops.push(Op::JumpIf(0));
-    let if_body_jump_index = self.ops.len() - 1;
 
     // else body fallthrough
     // (empty for now)
 
-    // unconditional jump to END
+    let end_jump_index = self.ops.len() as isize;
     self.ops.push(Op::Goto(0));
-    let else_jump_index = self.ops.len() - 1;
 
-    // if case
+    let if_body_index = self.ops.len() as isize;
     self.compile_statements(body);
 
-    let end_index = self.ops.len() - 1;
-    self.ops[if_body_jump_index] = Op::JumpIf(else_jump_index + 1);
-    self.ops[else_jump_index] = Op::Goto(end_index + 1);
+    let end_index = self.ops.len() as isize;
+    self.ops[if_body_jump_index as usize] = Op::JumpIf(if_body_index - if_body_jump_index);
+
+    self.ops[end_jump_index as usize] = Op::Goto(end_index - end_jump_index);
   }
 
   fn compile_while(&mut self, condition: Expression, body: Vec<Statement>) {
     // Compiled output looks something like this
     // 
-    // <start>
-    // <condition>
-    // not
-    // jump_if <end>
-    // <body>
-    // goto <start>
-    // <while_body>
-    // <end>
+    // <start_index>    | <condition> <───────────────╮
+    // ...              | <condition>                 │
+    // ...              | not                         │
+    // ...              | jump_if <end_index>  >────╮ │
+    // ...              | <body>                    │ │
+    // ...              | goto <start_index>   >────│─╯
+    // <end_index>      | ... whatever comes next <─╯
 
     let start_index = self.ops.len();
     self.compile_expression(condition);
@@ -118,10 +119,10 @@ impl StatementChunk {
 
     self.compile_statements(body);
 
-    self.ops.push(Op::Goto(start_index));
+    self.ops.push(Op::Goto(start_index as isize - self.ops.len() as isize));
 
     let end_index = self.ops.len();
-    self.ops[end_jump_index] = Op::JumpIf(end_index);
+    self.ops[end_jump_index] = Op::JumpIf(end_index as isize - end_jump_index as isize);
   }
 
   fn compile_echo(&mut self, expression: Expression) {
