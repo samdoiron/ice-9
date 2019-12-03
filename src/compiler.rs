@@ -7,24 +7,43 @@ use std::fmt::Write;
 
 type SymbolTable = Vec<(String, Vec<Op>)>;
 
-struct StatementChunk {
-  constants: Vec<i64>,
+struct ConstantPool {
+  constants: Vec<i64>
+}
+
+impl ConstantPool {
+  fn new() -> ConstantPool {
+    ConstantPool { constants: Vec::new() }
+  }
+
+  fn get_or_insert(&mut self, value: i64) -> usize {
+    match self.constants.iter().position(|i| i == &value) {
+      Some(index) => index,
+      None => {
+        self.constants.push(value);
+        self.constants.len() - 1
+      }
+    }
+  }
+}
+
+struct StatementChunk<'a> {
+  constant_pool: &'a mut ConstantPool,
   ops: Vec<Op>,
   variables: Vec<String>,
   symbol_table: SymbolTable
 }
 
 struct CompiledChunk {
-  constants: Vec<i64>,
   ops: Vec<Op>,
   symbol_table: SymbolTable
 }
 
-impl StatementChunk {
-  fn new() -> StatementChunk {
+impl<'a> StatementChunk<'a> {
+  fn new(constant_pool: &'a mut ConstantPool) -> StatementChunk {
     StatementChunk {
       ops: Vec::new(),
-      constants: Vec::new(),
+      constant_pool: constant_pool,
       variables: Vec::new(),
       symbol_table: Vec::new()
     }
@@ -34,7 +53,6 @@ impl StatementChunk {
       self.compile_statements(statements);
       self.ops.push(Op::Return);
       CompiledChunk {
-        constants: self.constants,
         ops: self.ops,
         symbol_table: self.symbol_table
       }
@@ -131,8 +149,7 @@ impl StatementChunk {
   }
 
   fn compile_function_definition(&mut self, name: String, body: Vec<Statement>) {
-    let mut compiled_chunk = StatementChunk::new().compile(body);
-    self.constants.append(&mut compiled_chunk.constants);
+    let compiled_chunk = StatementChunk::new(self.constant_pool).compile(body);
     self.symbol_table.push((name.into(), compiled_chunk.ops));
   }
 
@@ -201,8 +218,7 @@ impl StatementChunk {
         }
       },
       Expression::Number(value) => {
-        self.constants.push(value);
-        let index = self.constants.len() - 1;
+        let index = self.constant_pool.get_or_insert(value);
         self.ops.push(Op::Constant(index));
       },
       Expression::FunctionCall(name) => {
@@ -220,18 +236,19 @@ pub struct Program {
 }
 
 pub fn compile(statements: Vec<Statement>) -> Program { 
-  let compiled_chunk = StatementChunk::new().compile(statements);
+  let mut global_constant_pool = ConstantPool::new();
+  let compiled_chunk = StatementChunk::new(&mut global_constant_pool)
+    .compile(statements);
 
   let CompiledChunk {
     ops: mut program_ops,
-    constants,
     symbol_table,
     ..
   } = compiled_chunk;
 
   let mut offsets = HashMap::new();
 
-  // First pass: construct offset table, concat functions on to text
+  // First pass: concat function ops on to text, recording their offsets.
   for (name, mut ops) in symbol_table {
     offsets.insert(name, program_ops.len());
     program_ops.append(&mut ops);
@@ -271,7 +288,7 @@ pub fn compile(statements: Vec<Statement>) -> Program {
   }
 
   let mut constant_str = String::new();
-  for constant in constants {
+  for constant in global_constant_pool.constants {
     write!(&mut constant_str, "{} ", constant).expect("write constants");
   }
 

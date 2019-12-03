@@ -1,6 +1,16 @@
 
-
-while 1 {
+fn yell {
   echo 1;
+  shout();
+}
+
+
+fn shout {
+  echo 2;
+  yell();
+}
+
+while 2 {
+  yell();
 }
 
