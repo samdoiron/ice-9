@@ -1,4 +1,5 @@
 #!/bin/bash
 
-cargo run --bin plasma < $1 | cargo run --bin liquid
+scripts/make-hydro
+cargo run --bin plasma -- compile < $1 | ./target/release/liquid
 

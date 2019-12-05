@@ -59,7 +59,10 @@ fn main() {
         .about("Show the parsed AST of the code"))
     .subcommand(
       SubCommand::with_name("components")
-        .about("Show the separate components of the compiled output."));
+        .about("Show the separate components of the compiled output."))
+    .subcommand(
+      SubCommand::with_name("compile")
+        .about("Compile Plasma code to Liquid"));
   let global_matches = app.get_matches();
 
   if global_matches.subcommand_matches("ast").is_some() {

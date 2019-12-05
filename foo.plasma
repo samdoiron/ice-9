@@ -1,16 +1,16 @@
-
-fn yell {
-  echo 1;
-  shout();
+fn goodbye {
+  foo = 666;
+  echo foo;
 }
 
-
-fn shout {
-  echo 2;
-  yell();
+fn hello {
+  foo = 123;
+  echo foo;
+  goodbye();
 }
 
-while 2 {
-  yell();
-}
+foo = 10;
+echo foo;
+hello();
+echo foo;
 

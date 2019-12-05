@@ -1,0 +1,4 @@
+#!/bin/bash
+
+./target/release/plasma compile < $1 | ./target/release/liquid
+
